@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
 
     graph<string, int> graph = gal::get_random(
         50,
-        200,
+        100,
         [](size_t i) {
             return "V" + std::to_string(i + 1);
         },
@@ -19,6 +19,8 @@ int main(int argc, char** argv) {
             return rval(5, 20);
         }
     );
+
+    auto res = gal::dijkstra<int>(graph, graph.find_vertex("V1"), graph.find_vertex("V50"));
 
     return 0;
 }

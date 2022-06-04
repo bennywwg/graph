@@ -4,6 +4,7 @@
 #include <functional>
 #include <random>
 #include <vector>
+#include <set>
 
 template<typename T>
 T rval(T range_from, T range_to) {
@@ -13,7 +14,6 @@ T rval(T range_from, T range_to) {
     return distr(generator);
 }
 
-using std::set;
 using std::function;
 using std::vector;
 
@@ -24,43 +24,111 @@ public:
     using VRef = typename graphT::VRef;
     using ERef = typename graphT::ERef;
 
-    inline static set<VRef> get_from(const set<ERef>& edges) {
-        set<VRef> res;
+    template<typename T>
+    using SetT = typename graphT::template SetT<T>;
+    template<typename T, typename U>
+    using MapT = typename graphT::template MapT<T, U>;
+
+    inline static SetT<VRef> get_from(const SetT<ERef>& edges) {
+        SetT<VRef> res;
         for (const auto& e : edges) { res.insert(e->from); }
         return res;
     }
 
-    inline static set<VRef> get_to(const set<ERef>& edges) {
-        set<VRef> res;
+    inline static SetT<VRef> get_to(const SetT<ERef>& edges) {
+        SetT<VRef> res;
         for (const auto& e : edges) { res.insert(e->to); }
         return res;
     }
 
-    inline static set<VRef> get_from_if(const set<ERef>& edges, function<bool(const ERef&)> pred) {
-        set<VRef> res;
+    inline static SetT<VRef> get_from_if(const SetT<ERef>& edges, function<bool(const ERef&)> pred) {
+        SetT<VRef> res;
         for (const auto& e : edges) { if (pred(e)) res.insert(e->from); }
         return res;
     }
 
-    inline static set<VRef> get_to_if(const set<ERef>& edges, function<bool(const ERef&)> pred) {
-        set<VRef> res;
+    inline static SetT<VRef> get_to_if(const SetT<ERef>& edges, function<bool(const ERef&)> pred) {
+        SetT<VRef> res;
         for (const auto& e : edges) { if (pred(e)) res.insert(e->from); }
         return res;
     }
 
     template<typename CostT>
-    inline static vector<VRef> dijkstra(const graphT& graph, VRef start, VRef end, function<CostT(CostT const&, ET const&)> addCostFunc) {
-        vector<VRef> res;
-        set<VRef> visited;
-        map<VRef, CostT> to_visit;
+    inline static vector<ERef> dijkstra(const graphT& graph, VRef start, VRef end, function<CostT(CostT const&, ET const&)> addCostFunc) {
+        struct Hop {
+            CostT total;
+            VRef from;
+            ERef edge;
+            inline bool operator<(Hop const& other) const {
+                if (from && !other.from) return true;
+                else if (!from) return false;
+                else return total < other.total;
+            }
+        };
 
-        to_visit.insert(start);
+        std::multiset<Hop> Q;
+        MapT<VRef, Hop> P;
 
-        while (!to_visit.empty()) {
-            set<ERef> next = graph.get_edges(*curr);
+        {
+            Hop startHop{ CostT(), start, ERef() };
+            Q.insert(startHop);
+            P[start] = startHop;
         }
 
+        while (!Q.empty()) {
+            Hop u = *Q.begin();
+            Q.erase(Q.begin());
+
+            const auto& fromu = graph.edges_from(u.from);
+            for (ERef e : fromu) {
+                CostT c = addCostFunc(u.total, *e);
+                VRef v = e.get_to();
+                if (P.find(v) == P.end() || c < P[v].total) {
+                    // e never been found before, update it
+                    P[v] = Hop{ c, v, e };
+                    
+
+                    { // Sanity check... make sure that there is either 0 or 1 matching instance found in Q
+                        int num = 0;
+                        for (auto it = Q.begin(); it != Q.end(); ++it) {
+                            if ((*it).edge.get_to() == v) {
+                                ++num;
+                            }
+                        }
+                        assert(num == 0 || num == 1);
+                    }
+
+
+                    // Replace in the priority queue there should be exactly one
+                    for (auto it = Q.begin(); it != Q.end(); ++it) {
+                        if ((*it).edge.get_to() == v) {
+                            assert(c < (*it).total);
+                            Q.erase(it);
+                            break;
+                        }
+                    }
+
+                    Q.insert(P[v]);
+                }
+            }
+
+            if (P.find(end) != P.end()) break;
+        }
+
+        // Trace solution
+        vector<ERef> res;
+        auto found = P.find(end);
+        while (found != P.end() && found->first != start) {
+            res.push_back(found->second.edge);
+            found = P.find(found->second.edge.get_from());
+        }
+        std::reverse(res.begin(), res.end());
         return res;
+    }
+
+    template<typename CostT>
+    inline static vector<ERef> dijkstra(const graphT& graph, VRef start, VRef end) {
+        return dijkstra<CostT>(graph, start, end, [](CostT const& cost, ET const& e) { return e + cost; });
     }
 
     inline static graphT get_random(int n, int m, function<VT(size_t)> vertex_generator, function<ET(size_t)> edge_generator) {
