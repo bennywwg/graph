@@ -48,10 +48,11 @@ public:
         return res;
     }
 
-    inline static vector<VRef> dijkstra(const graphT& graph, VRef start, VRef end) {
+    template<typename CostT>
+    inline static vector<VRef> dijkstra(const graphT& graph, VRef start, VRef end, function<CostT(CostT const&, ET const&)> addCostFunc) {
         vector<VRef> res;
         set<VRef> visited;
-        set<VRef> to_visit;
+        map<VRef, CostT> to_visit;
 
         to_visit.insert(start);
 

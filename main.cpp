@@ -20,7 +20,5 @@ int main(int argc, char** argv) {
         }
     );
 
-    auto res = gal::dijkstra(graph, graph.get_vertex("V1"), graph.get_vertex("V50"));
-
     return 0;
 }

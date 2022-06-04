@@ -110,7 +110,7 @@ public:
         return toV.at(v.v);
     }
 
-    inline VRef get_vertex(VT const& v) const {
+    inline VRef find_vertex(VT const& v) const {
         for (auto const& vv : V) {
             if (*vv == v) { return vv; }
         }
@@ -118,6 +118,17 @@ public:
         return nullptr;
     }
 
+    inline set<VRef> all_vertices() const {
+        set<VRef> res;
+        for (VT* v : V) res.insert(v);
+        return res;
+    }
+
+    inline set<ERef> all_edges() const {
+        set<ERef> res;
+        for (DVE* e : E) res.insert(e);
+        return res;
+    }
 private:
     set<VT*> V;
     set<DVE*> E;
