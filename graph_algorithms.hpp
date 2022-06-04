@@ -66,6 +66,8 @@ public:
             }
         };
 
+        if (start == end) return { };
+
         std::multiset<Hop> Q;
         MapT<VRef, Hop> P;
 
@@ -84,29 +86,11 @@ public:
                 CostT c = addCostFunc(u.total, *e);
                 VRef v = e.get_to();
                 if (P.find(v) == P.end() || c < P[v].total) {
-                    // e never been found before, update it
                     P[v] = Hop{ c, v, e };
-                    
 
-                    { // Sanity check... make sure that there is either 0 or 1 matching instance found in Q
-                        int num = 0;
-                        for (auto it = Q.begin(); it != Q.end(); ++it) {
-                            if ((*it).edge.get_to() == v) {
-                                ++num;
-                            }
-                        }
-                        assert(num == 0 || num == 1);
-                    }
-
-
-                    // Replace in the priority queue there should be exactly one
-                    for (auto it = Q.begin(); it != Q.end(); ++it) {
-                        if ((*it).edge.get_to() == v) {
-                            assert(c < (*it).total);
-                            Q.erase(it);
-                            break;
-                        }
-                    }
+                    // Erase worse value from the priority queue
+                    auto found = std::find_if(Q.begin(), Q.end(), [v](Hop const& val) { return val.edge.get_to() == v; });
+                    if (found != Q.end()) Q.erase(found);
 
                     Q.insert(P[v]);
                 }

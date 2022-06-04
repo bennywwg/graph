@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
         }
     );
 
-    auto res = gal::dijkstra<int>(graph, graph.find_vertex("V1"), graph.find_vertex("V50"));
+    auto res = gal::dijkstra<int>(graph, graph.find_vertex("V1"), graph.find_vertex("V1"));
 
     return 0;
 }
