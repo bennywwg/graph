@@ -16,7 +16,7 @@ void profile() {
     vector<size_t> nanos;
     for (size_t n = 100; n < 1000000; n += 100000) {
         auto t1 = Clock::now();
-        vector<gal::VRef> V;
+        vector<typename gal::VRef> V;
         graph<size_t, empty, C> G = gal::get_random(n, n, [](size_t i) {return i; }, [](size_t) { return empty(); }, V);
 
         for (size_t i = 0; i < n; ++i) G.add_edge(V[i], V[(i + 1) % n], empty());
