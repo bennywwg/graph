@@ -15,3 +15,6 @@ A collection of algorithms that operate on a graph `G`.
 - [X] `is_strongly_connected(G)` - Run `tarjan_scc(G)` and check if there is only one cluster
 - [X] `cycles(G)` - Run `tarjan_scc(G)` and check if there are no clusters
 - [X] `get_random(n, m, Gv, Ge)` - Generate a random graph with `|V|=n, |E|=m`, with generator functions
+
+### `VRef` and `ERef`
+`VRef` and `ERef` are essentially handles to vertices and edges that can be derefenced to access the underlying `VT` and `ET` user data objects. `VRef`s and `ERef`s are **valid for as long as they are present in their owning graph**. This means the owning graph can be modified without invalidating references. They are invalidated when removed from the graph, or when the owning graph is destructed. Derefencing them after they are invalidated is undefined behavior.
