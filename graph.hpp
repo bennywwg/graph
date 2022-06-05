@@ -7,6 +7,8 @@ class graph_exception { };
 class graph_assert : public graph_exception { };
 class graph_constraint_failure : public graph_exception { };
 
+struct empty { };
+
 void assert(bool expression) { if (!expression) throw graph_assert(); }
 
 template<typename VT, typename ET>
