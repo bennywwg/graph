@@ -21,10 +21,11 @@ void profile() {
 
         for (size_t i = 0; i < n; ++i) G.add_edge(V[i], V[(i + 1) % n], empty());
 
-        ASSERT(gal::path_exists(G, gal::find_vertex(G, 0), gal::find_vertex(G, n - 1)));
+        bool val = gal::path_exists(G, gal::find_vertex(G, 0), gal::find_vertex(G, n - 1));
+        ASSERT(val);
 
         nanos.push_back((Clock::now() - t1).count());
-        std::cout << n << " -> " << static_cast<double>(nanos.back()) * 0.000000001 << "s, perf/vert = " << static_cast<double>(n * 1000000) / static_cast<double>(nanos.back()) << std::endl;
+        std::cout << n << ", " << val << " -> " << static_cast<double>(nanos.back()) * 0.000000001 << "s, perf/vert = " << static_cast<double>(n * 1000000) / static_cast<double>(nanos.back()) << std::endl;
     }
 
     for (size_t i = 0; i < nanos.size(); ++i) {

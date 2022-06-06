@@ -26,6 +26,7 @@
   <ItemGroup>
     <None Include="..\.gitignore" />
     <None Include="..\Makefile" />
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

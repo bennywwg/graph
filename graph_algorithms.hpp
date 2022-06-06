@@ -2,16 +2,23 @@
 
 #include "graph.hpp"
 #include <functional>
-#include <random>
 #include <vector>
 #include <set>
 
-template<typename T>
-T rval(T range_from, T range_to) {
-    std::random_device                  rand_dev;
-    std::mt19937                        generator(rand_dev());
-    std::uniform_int_distribution<T>    distr(range_from, range_to);
-    return distr(generator);
+static unsigned long x = 123456789, y = 362436069, z = 521288629;
+
+unsigned long rval(size_t l, size_t u) {          //period 2^96-1
+    unsigned long t;
+    x ^= x << 16;
+    x ^= x >> 5;
+    x ^= x << 1;
+
+    t = x;
+    x = y;
+    y = z;
+    z = t ^ x ^ y;
+
+    return l + (z % (u + 1));
 }
 
 using std::function;
@@ -73,10 +80,6 @@ public:
                 VRef v = e.get_to();
                 if (P.find(v) == P.end() || c < P[v].total) {
                     P[v] = Hop{ c, v, e };
-
-                    // Erase worse value from the priority queue
-                    auto found = std::find_if(Q.begin(), Q.end(), [v](Hop const& val) { return val.edge.get_to() == v; });
-                    if (found != Q.end()) Q.erase(found);
 
                     Q.insert(P[v]);
                 }
@@ -207,12 +210,8 @@ public:
     inline static graphT get_random(size_t n, size_t m, function<VT(size_t)> const& vertex_generator, function<ET(size_t)> const& edge_generator, vector<VRef>& V) {
         graphT res;
         V.clear();
-        for (size_t i = 0; i < n; ++i) {
-            V.push_back(res.add_vertex(vertex_generator(i)));
-        }
-        for (size_t i = 0; i < m; ++i) {
-            res.add_edge(V[rval<size_t>(0, V.size() - 1)], V[rval<size_t>(0, V.size() - 1)], edge_generator(i));
-        }
+        for (size_t i = 0; i < n; ++i) V.push_back(res.add_vertex(vertex_generator(i)));
+        for (size_t i = 0; i < m; ++i) res.add_edge(V[rval(0, V.size() - 1)], V[rval(0, V.size() - 1)], edge_generator(i));
         return res;
     }
     inline static graphT get_random(size_t n, size_t m, function<VT(size_t)> const& vertex_generator, function<ET(size_t)> const& edge_generator) {

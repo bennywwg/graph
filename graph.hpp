@@ -11,7 +11,11 @@ class graph_constraint_failure : public graph_exception { };
 
 struct empty { };
 
+#ifdef _DEBUG
 #define ASSERT(expr) { if (!(expr)) throw graph_assert(); }
+#else
+#define ASSERT(expr)
+#endif
 
 //struct FlatContainerConfig {
 //    template<typename T, typename> using BaseSetT = flat_multiset_pod<T, 8>;
@@ -132,13 +136,13 @@ public:
 
         delete e.e;
     }
-    inline SetT<ERef> edges_from(VRef const& v) const {
+    inline SetT<ERef> const& edges_from(VRef const& v) const {
         ASSERT(v);
         ASSERT(V.find(v) != V.end());
 
         return v.v->from;
     }
-    inline SetT<ERef> edges_to(VRef const& v) const {
+    inline SetT<ERef> const& edges_to(VRef const& v) const {
         ASSERT(v);
         ASSERT(V.find(v) != V.end());
 
