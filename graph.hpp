@@ -74,13 +74,12 @@ public:
         ASSERT(V.has_key(from));
         ASSERT(V.has_key(to));
 
-        return ERef::invalid();
-        //ERef res = E.emplace(e, from, to);
+        ERef res = E.emplace(DVE{e, from, to});
         
-        //V.get(from)->from.push_back(res);
-        //V.get(to)->to.push_back(res);
+        V.get(from)->from.push_back(res);
+        V.get(to)->to.push_back(res);
 
-        //return res;
+        return res;
     }
     inline void remove_edge(ERef const& e) {
         ASSERT(E.has_key(e));
@@ -108,14 +107,11 @@ public:
 
         return V.get(v)->to;
     }
-    inline void iterate_vertices(std::function<bool(VRef)> const& op) const {
-        for (VRef v : V) if(op(v)) break;
+    inline void iterate_vertices(std::function<bool(VRef, VT&)> const& op) const {
+        for (const auto& [key, value] : V.items()) if(op(key, const_cast<VT&>(value.get().v))) break;
     }
-    inline void iterate_vertex_values(std::function<bool(VRef, VT const&)> const& op) const {
-        for (const auto& [key, value] : V.items()) if(op(key, value.get().v)) break;
-    }
-    inline void iterate_edges(std::function<bool(ERef)> const& op) const {
-        for (ERef e : E) if(op(e)) break;
+    inline void iterate_edges(std::function<bool(ERef, ET&)> const& op) const {
+        for (const auto& [key, value] : E.items()) if(op(key, const_cast<ET&>(value.get().e))) break;
     }
 
     inline graph() = default;

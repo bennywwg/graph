@@ -39,7 +39,7 @@ public:
     inline static VRef
     find_vertex(graphT const& G, VT const& v) {
         VRef res = VRef::invalid();
-        G.iterate_vertex_values([&](VRef kv, VT const& sv) {
+        G.iterate_vertices([&](VRef kv, VT const& sv) {
             if (v == sv) {
                 res = kv;
                 return true;
@@ -125,12 +125,12 @@ public:
             VRef curr = U[index++];
             if (pred(curr)) return curr;
 
-            T.insert(curr);
+            T.push_back(curr);
 
             for (ERef e : G.edges_from(curr)) {
-                VRef w = e.get_to();
+                VRef w = G.get_to(e);
                 
-                if (T.find(w) == T.end()) U.push_back(w);
+                if (std::find(T.begin(), T.end(), w) == T.end()) U.push_back(w);
             }
         }
 
