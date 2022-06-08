@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <set>
 #include <map>
+#include "slot_map.h"
 
 class graph_exception { };
 class graph_assert : public graph_exception { };
@@ -37,122 +38,84 @@ class graph {
 private:
     struct CVT;
     struct DVE;
+
 public:
+    template<typename T, typename U>
+    using MapT = std::map<T, U>;
 
-    template<typename T> struct RefHasher;
+    template<typename T>
+    using SetT = std::vector<T>;
 
-    class VRef {
-        CVT* v = nullptr;
-
-        VRef(CVT* v) : v(v) { }
-    public:
-        VRef() = default;
-
-        friend class graph;
-        friend struct RefHasher<VRef>;
-
-        inline VT* operator->() const { return &(v->v); }
-        inline VT& operator*() const { return v->v; }
-        inline bool operator<(const VRef& other) const { return v < other.v; }
-        inline bool operator==(const VRef& other) const { return v == other.v; }
-        inline bool operator!=(const VRef& other) const { return v != other.v; }
-        inline operator bool() const { return v != nullptr; }
-    };
-
-    class ERef {
-        DVE* e = nullptr;
-
-        ERef(DVE* e) : e(e) { }
-    public:
-        ERef() = default;
-
-        friend class graph;
-        friend struct RefHasher<ERef>;
-
-        VRef get_from() const { return e->from; }
-        VRef get_to() const { return e->to; }
-
-        inline ET* operator->() const { return &(e->e); }
-        inline ET& operator*() const { return e->e; }
-        inline bool operator<(const ERef& other) const { return e < other.e; }
-        inline bool operator==(const ERef& other) const { return e == other.e; }
-        inline bool operator!=(const ERef& other) const { return e != other.e; }
-        inline operator bool() const { return e != nullptr; }
-    };
-
-    template<> struct RefHasher<VRef>           { size_t operator()(VRef const& val) const { return std::hash<CVT*>()(val.v); }             };
-    template<> struct RefHasher<ERef>           { size_t operator()(ERef const& val) const { return std::hash<DVE*>()(val.e); }             };
-    template<typename T> struct SetSpecializer  { using SpecialSet                      = typename C::template BaseSetT<T, std::hash<T>>;            };
-    template<> struct SetSpecializer<VRef>      { using SpecialSet                      = typename C::template BaseSetT<VRef, RefHasher<VRef>>;      };
-    template<> struct SetSpecializer<ERef>      { using SpecialSet                      = typename C::template BaseSetT<ERef, RefHasher<ERef>>;      };
-    template<typename T> struct MapSpecializer  { template<typename U> using SpecialMap = typename C::template BaseMapT<T, U, std::hash<T>>;         };
-    template<> struct MapSpecializer<VRef>      { template<typename U> using SpecialMap = typename C::template BaseMapT<VRef, U, RefHasher<VRef>>;   };
-    template<> struct MapSpecializer<ERef>      { template<typename U> using SpecialMap = typename C::template BaseMapT<ERef, U, RefHasher<ERef>>;   };
-    template<typename T> using SetT = typename SetSpecializer<T>::SpecialSet;
-    template<typename T, typename U> using MapT = typename MapSpecializer<T>::template SpecialMap<U>;
-
+    using VRef = dod::slot_map_key<CVT>;
+    using ERef = dod::slot_map_key<DVE>;
 private:
-    struct CVT { VT v; SetT<ERef> from; SetT<ERef> to; };
-    struct DVE { ET e; VRef from; VRef to; };
+    
+    struct CVT { VT v;  SetT<ERef> from;    SetT<ERef> to; };
+    struct DVE { ET e;        VRef from;          VRef to; };
+
+public:
 
 public:
     inline VRef add_vertex(const VT& v) {
-        CVT* const res = new CVT{ v, { }, { } };
-
-        V.insert(res);
-
-        return res;
+        return V.emplace(CVT{v, SetT<ERef>(), SetT<ERef>()});
     }
     inline void remove_vertex(const VRef& v) {
-        ASSERT(v);
-        ASSERT(V.find(v) != V.end());
+        ASSERT(V.has_key(v));
 
-        if (v.v->from.empty()) { throw graph_exception(); }
-        if (v.v->to.empty()) { throw graph_exception(); }
+        if (!V.get(v)->from.empty()) { throw graph_exception(); }
+        if (!V.get(v)->to.empty()) { throw graph_exception(); }
 
-        V.erase(v.v);
-
-        delete v.v;
+        V.eraase(v);
     }
-    inline ERef add_edge(VRef const& from, VRef const&  to, ET const& e) {
-        ASSERT(from);
-        ASSERT(to);
+    inline VT& get(VRef v) {
+        return V.get(v)->v;
+    }
+    inline ERef add_edge(VRef const& from, VRef const& to, ET const& e) {
+        ASSERT(V.has_key(from));
+        ASSERT(V.has_key(to));
 
-        DVE* const res = new DVE { e, from, to };
+        return ERef::invalid();
+        //ERef res = E.emplace(e, from, to);
+        
+        //V.get(from)->from.push_back(res);
+        //V.get(to)->to.push_back(res);
 
-        E.insert(res);
-        from.v->from.insert(res);
-        to.v->to.insert(res);
-
-        return res;
+        //return res;
     }
     inline void remove_edge(ERef const& e) {
-        ASSERT(e);
-        ASSERT(E.find(e) != E.end());
+        ASSERT(E.has_key(e));
 
-        e.e->from.v->from.erase(e);
-        e.e->to.v->to.erase(e);
-        E.erase(e.e);
-
-        delete e.e;
+        V.get(E.get(e)->from)->from.erase(e);
+        V.get(E.get(e)->to)->to.erase(e);
+        E.erase(e);
+    }
+    inline ET& get(ERef e) const {
+        return const_cast<ET&>(E.get(e)->e);
+    }
+    inline VRef get_from(ERef e) const {
+        return E.get(e)->from;
+    }
+    inline VRef get_to(ERef e) const {
+        return E.get(e)->to;
     }
     inline SetT<ERef> const& edges_from(VRef const& v) const {
-        ASSERT(v);
-        ASSERT(V.find(v) != V.end());
+        ASSERT(V.has_key(v));
 
-        return v.v->from;
+        return V.get(v)->from;
     }
     inline SetT<ERef> const& edges_to(VRef const& v) const {
-        ASSERT(v);
-        ASSERT(V.find(v) != V.end());
+        ASSERT(V.has_key(v));
 
-        return v.v->to;
+        return V.get(v)->to;
     }
-    inline SetT<VRef> const& all_vertices() const {
-        return V;
+    inline void iterate_vertices(std::function<bool(VRef)> const& op) const {
+        for (VRef v : V) if(op(v)) break;
     }
-    inline SetT<ERef> const& all_edges() const {
-        return E;
+    inline void iterate_vertex_values(std::function<bool(VRef, VT const&)> const& op) const {
+        for (const auto& [key, value] : V.items()) if(op(key, value.get().v)) break;
+    }
+    inline void iterate_edges(std::function<bool(ERef)> const& op) const {
+        for (ERef e : E) if(op(e)) break;
     }
 
     inline graph() = default;
@@ -166,10 +129,10 @@ public:
         other.E.clear();
         return *this;
     }
-    inline graph(graph const& other) {
+    inline graph(graph const& other) = delete; /*{
         *this = other;
-    }
-    inline graph& operator=(graph const& other) {
+    }*/
+    inline graph& operator=(graph const& other) = delete;/* {
         for (ERef e : E) {
             delete e.e;
         }
@@ -213,16 +176,8 @@ public:
         }
     
         return *this;
-    }
-    inline ~graph() {
-        for (ERef e : E) {
-            delete e.e;
-        }
-        for (VRef v : V) {
-            delete v.v;
-        }
-    }
+    }*/
 private:
-    SetT<VRef> V;
-    SetT<ERef> E;
+    dod::slot_map<CVT> V;
+    dod::slot_map<DVE> E;
 };

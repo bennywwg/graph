@@ -18,7 +18,7 @@ unsigned long rval(size_t l, size_t u) {          //period 2^96-1
     y = z;
     z = t ^ x ^ y;
 
-    return l + (z % (u + 1));
+    return l + (z % u);
 }
 
 using std::function;
@@ -38,14 +38,21 @@ public:
 
     inline static VRef
     find_vertex(graphT const& G, VT const& v) {
-        for (VRef r : G.all_vertices()) if (*r == v) return r;
-        return VRef();
+        VRef res = VRef::invalid();
+        G.iterate_vertex_values([&](VRef kv, VT const& sv) {
+            if (v == sv) {
+                res = kv;
+                return true;
+            }
+            return false;
+        });
+        return res;
     }
 
     // https://en.wikipedia.org/wiki/Dijkstra's_algorithm
     template<typename CostT>
     inline static vector<ERef>
-    dijkstra(const graphT& graph, VRef start, VRef end, function<CostT(CostT const&, ET const&)> const& addCostFunc) {
+    dijkstra(const graphT& G, VRef start, VRef end, function<CostT(CostT const&, ET const&)> const& addCostFunc) {
         struct Hop {
             CostT total;
             VRef from;
@@ -74,10 +81,10 @@ public:
             Hop u = *Q.begin();
             Q.erase(Q.begin());
 
-            const auto& fromu = graph.edges_from(u.from);
+            const auto& fromu = G.edges_from(u.from);
             for (ERef e : fromu) {
-                CostT c = addCostFunc(u.total, *e);
-                VRef v = e.get_to();
+                CostT c = addCostFunc(u.total, G.get(e));
+                VRef v = G.get_to(e);
                 if (P.find(v) == P.end() || c < P[v].total) {
                     P[v] = Hop{ c, v, e };
 
@@ -93,7 +100,7 @@ public:
         auto found = P.find(end);
         while (found != P.end() && found->first != start) {
             res.push_back(found->second.edge);
-            found = P.find(found->second.edge.get_from());
+            found = P.find(G.get_from(found->second.edge));
         }
         std::reverse(res.begin(), res.end());
         return res;
@@ -207,15 +214,50 @@ public:
     cycles(graphT const& G)
     { return tarjan_scc(G).all_vertices().size() < G.all_vertices().size(); }
 
-    inline static graphT get_random(size_t n, size_t m, function<VT(size_t)> const& vertex_generator, function<ET(size_t)> const& edge_generator, vector<VRef>& V) {
+    inline static graphT
+    get_random(size_t n, size_t m, function<VT(size_t)> const& vertex_generator, function<ET(size_t)> const& edge_generator, vector<VRef>& V) {
         graphT res;
         V.clear();
         for (size_t i = 0; i < n; ++i) V.push_back(res.add_vertex(vertex_generator(i)));
         for (size_t i = 0; i < m; ++i) res.add_edge(V[rval(0, V.size() - 1)], V[rval(0, V.size() - 1)], edge_generator(i));
         return res;
     }
-    inline static graphT get_random(size_t n, size_t m, function<VT(size_t)> const& vertex_generator, function<ET(size_t)> const& edge_generator) {
+    inline static graphT
+    get_random(size_t n, size_t m, function<VT(size_t)> const& vertex_generator, function<ET(size_t)> const& edge_generator) {
         vector<VRef> V;
         return get_random(n, m, vertex_generator, edge_generator, V);
+    }
+
+    inline static graphT
+    get_random_dag(size_t n, size_t m, function<VT(size_t)> const& vertex_generator, function<ET(size_t)> const& edge_generator, VRef& start, VRef& end) {
+        if (n <= 1) {
+            graphT res;
+            if (n == 1) res.add_vertex(vertex_generator(0));
+        }
+
+        MapT<VRef, int> R;
+        vector<VRef> V;
+        get_random(n, 0, vertex_generator, edge_generator, V);
+
+        auto pop_random = [&V]() {
+            size_t i = rval(0, V.size());
+            VRef v = V[i];
+            V.erase(V.begin() + i);
+            return v;
+        };
+
+
+        // Assign start and end verts randomly
+        start = pop_random();
+        end = pop_random();
+
+        R[start] = 1;
+        R[end] = n;
+
+        // Add edges to the graph
+        for (size_t i = 1; i < n - 1; ++i) {
+            VRef v = pop_random();
+            R[v] = i;
+        }
     }
 };
