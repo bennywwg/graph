@@ -82,7 +82,9 @@ public:
             Q.erase(Q.begin());
 
             const auto& fromu = G.edges_from(u.from);
-            for (ERef e : fromu) {
+            for(size_t i = 0; i < fromu.size(); ++i) {
+                ERef e = fromu[i];
+            //for (ERef e : fromu) {
                 CostT c = addCostFunc(u.total, G.get(e));
                 VRef v = G.get_to(e);
                 if (P.find(v) == P.end() || c < P[v].total) {
@@ -166,13 +168,13 @@ public:
 
         function<void(VRef const&)> strongConnect;
         
-        strongConnect = [&](VRef const& v) {
+        strongConnect = [&](VRef v) {
             R[v] = State{ index, index, true };
             ++index;
             S.push_back(v);
 
             for (auto e : G.edges_from(v)) {
-                VRef w = e.get_to();
+                VRef w = G.get_to(e);
                 if (R.find(w) == R.end()) {
                     strongConnect(w);
                     R[v].lowlink = std::min(R.at(v).lowlink, R.at(w).lowlink);
@@ -189,17 +191,18 @@ public:
                     w = S.back();
                     S.pop_back();
                     R.at(w).onStack = false;
-                    component.insert(w);
+                    component.push_back(w);
                 } while (w != v);
                 res.add_vertex(component);
             }
         };
 
-        for (VRef v : G.all_vertices()) {
+        G.iterate_vertices([&](VRef v, VT& vv) {
             if (R.find(v) == R.end()) {
                 strongConnect(v);
             }
-        }
+            return false;
+        });
 
         return res;
     }
@@ -207,12 +210,12 @@ public:
     // Empty graph considered to be fully connected 
     inline static bool
     is_strongly_connected(graphT const& G)
-    { return tarjan_scc(G).all_vertices().size() <= 1; }
+    { return tarjan_scc(G).vertex_count() <= 1; }
 
     // A modification of tarjan's
     inline static bool
     cycles(graphT const& G)
-    { return tarjan_scc(G).all_vertices().size() < G.all_vertices().size(); }
+    { return tarjan_scc(G).vertex_count() < G.vertex_count(); }
 
     inline static graphT
     get_random(size_t n, size_t m, function<VT(size_t)> const& vertex_generator, function<ET(size_t)> const& edge_generator, vector<VRef>& V) {

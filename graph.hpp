@@ -4,7 +4,8 @@
 #include <unordered_map>
 #include <set>
 #include <map>
-#include "slot_map.h"
+#include "slot_map.hpp"
+#include "stack_vector.hpp"
 
 class graph_exception { };
 class graph_assert : public graph_exception { };
@@ -44,7 +45,7 @@ public:
     using MapT = std::map<T, U>;
 
     template<typename T>
-    using SetT = std::vector<T>;
+    using SetT = llvm::SmallVector<T, 16>;
 
     using VRef = dod::slot_map_key<CVT>;
     using ERef = dod::slot_map_key<DVE>;
@@ -110,8 +111,14 @@ public:
     inline void iterate_vertices(std::function<bool(VRef, VT&)> const& op) const {
         for (const auto& [key, value] : V.items()) if(op(key, const_cast<VT&>(value.get().v))) break;
     }
+    inline size_t vertex_count() const {
+        return V.size();
+    }
     inline void iterate_edges(std::function<bool(ERef, ET&)> const& op) const {
         for (const auto& [key, value] : E.items()) if(op(key, const_cast<ET&>(value.get().e))) break;
+    }
+    inline size_t edge_count() const {
+        return E.size();
     }
 
     inline graph() = default;

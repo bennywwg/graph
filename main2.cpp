@@ -12,7 +12,7 @@ void profile() {
 
     vector<size_t> nanos;
     for (size_t n = 100; n < 1000000; n += 100000) {
-        
+
         auto t1 = Clock::now();
         vector<typename gal::VRef> V;
         graph<size_t, empty, C> G = gal::get_random(n, n, [](size_t i) {return i; }, [](size_t) { return empty(); }, V);
@@ -36,6 +36,7 @@ int main(int, char**) {
 
     profile<UnorderedContainerConfig>();
     std::cout << std::endl;
+
     profile<OrderedContainerConfig>();
 
     graph<std::string, int> G = gal::get_random(
@@ -50,12 +51,15 @@ int main(int, char**) {
         auto b = gal::find_vertex(G, "V" + std::to_string(((i + 1) % 50) + 1));
         G.add_edge(a, b, 100);
     }
-
+    
     auto res = gal::dijkstra<int>(G, gal::find_vertex(G, "V1"), gal::find_vertex(G, "V50"));
 
     for (auto e : res) {
         std::cout << G.get(G.get_from(e)) << " --( " << G.get(e) << " )--> " << G.get(G.get_to(e)) << std::endl;
     }
+
+    bool scc = gal::is_strongly_connected(G);
+    ASSERT(scc);
 
     return 0;
 }
