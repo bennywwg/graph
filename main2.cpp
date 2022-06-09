@@ -36,7 +36,7 @@ int main(int, char**) {
 
     profile<UnorderedContainerConfig>();
     std::cout << std::endl;
-
+    
     profile<OrderedContainerConfig>();
 
     graph<std::string, int> G = gal::get_random(

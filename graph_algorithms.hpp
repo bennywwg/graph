@@ -18,7 +18,7 @@ unsigned long rval(size_t l, size_t u) {          //period 2^96-1
     y = z;
     z = t ^ x ^ y;
 
-    return l + (z % u);
+    return static_cast<unsigned long>(l + (z % u));
 }
 
 using std::function;
@@ -173,7 +173,9 @@ public:
             ++index;
             S.push_back(v);
 
-            for (auto e : G.edges_from(v)) {
+            auto el = G.edges_from(v);
+            for (auto e : el) {
+                
                 VRef w = G.get_to(e);
                 if (R.find(w) == R.end()) {
                     strongConnect(w);
@@ -197,7 +199,7 @@ public:
             }
         };
 
-        G.iterate_vertices([&](VRef v, VT& vv) {
+        G.iterate_vertices([&](VRef v, VT&) {
             if (R.find(v) == R.end()) {
                 strongConnect(v);
             }

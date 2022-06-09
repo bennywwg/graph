@@ -24,6 +24,15 @@
     <ClInclude Include="graph_algorithms.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="slot_map.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="slot_map.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stack_vector.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.gitignore" />
@@ -32,6 +41,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stack_vector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

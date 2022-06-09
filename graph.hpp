@@ -45,7 +45,7 @@ public:
     using MapT = std::map<T, U>;
 
     template<typename T>
-    using SetT = llvm::SmallVector<T, 16>;
+    using SetT = SmallVector<T, 16>;
 
     using VRef = dod::slot_map_key<CVT>;
     using ERef = dod::slot_map_key<DVE>;
@@ -96,6 +96,8 @@ public:
         return E.get(e)->from;
     }
     inline VRef get_to(ERef e) const {
+        ASSERT(E.get(e));
+
         return E.get(e)->to;
     }
     inline SetT<ERef> const& edges_from(VRef const& v) const {
